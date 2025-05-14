@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Автоматический перевод текстов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --main-bg: #eef2f9; /* Немного светлее */
+            --container-bg: #ffffff;
+            --accent: #3b82f6; /* Синий */
+            --accent-hover: #2563eb;
+            --border-light: #e5e7eb;
+            --border-strong: #d1d5db;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-placeholder: #9ca3af;
+            --success: #10b981; /* Зеленый */
+            --success-hover: #059669;
+            --danger: #ef4444; /* Красный */
+            --danger-hover: #dc2626;
+            --warning: #f59e0b; /* Желтый для предупреждений */
+            --font-family: 'Inter', sans-serif;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --toast-bg: #333;
+            --toast-text: #fff;
+        }
+        body {
+            font-family: var(--font-family);
+            background: var(--main-bg);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden; /* Предотвратить горизонтальный скролл от toast */
+        }
+        .container {
+            background: var(--container-bg);
+            width: 100%;
+            max-width: 550px; /* Немного шире */
+            margin-top: 30px;
+            border-radius: 20px; /* Более скругленные углы */
+            box-shadow: var(--shadow-lg);
+            padding: 30px 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.75em;
+            color: var(--accent);
+        }
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: space-between; /* Растянем элементы */
+        }
+        select {
+            flex-grow: 1;
+            font-size: 1em;
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            background: #f9fafb;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none; /* Убираем стандартную стрелку */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 1em;
+        }
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2);
+        }
+        .swap-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--border-light);
+            border-radius: 50%;
+            width: 42px; /* Чуть больше */
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .swap-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .input-area, .output-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .textarea-wrapper {
+            position: relative;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            max-height: 250px;
+            resize: vertical;
+            font-size: 1.05em;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            background: #f9fafb;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+        textarea::placeholder {
+            color: var(--text-placeholder);
+        }
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2);
+        }
+        .char-counter {
+            text-align: right;
+            font-size: 0.85em;
+            color: var(--text-placeholder);
+            padding-right: 5px;
+            margin-top: -4px; /* Подтянуть ближе к textarea */
+        }
+        .textarea-shake {
+            animation: shake 0.5s;
+            border-color: var(--danger) !important;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .main-buttons {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        button {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button i { margin-right: 4px; }
+
+        #translateBtn {
+            background: var(--accent);
+            color: #fff;
+        }
+        #translateBtn:hover {
+            background: var(--accent-hover);
+            box-shadow: var(--shadow-sm);
+        }
+        #translateBtn:disabled {
+            background: #9ca3af; /* Серый для неактивной кнопки */
+            cursor: not-allowed;
+        }
+
+        #clearBtn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+        }
+        #clearBtn:hover {
+            background: #f3f4f6; /* Легкий фон при наведении */
+            border-color: var(--border-strong);
+            color: var(--text-primary);
+        }
+        .result-box {
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            min-height: 80px;
+            padding: 15px;
+            font-size: 1.05em;
+            color: var(--text-primary);
+            position: relative;
+            line-height: 1.6;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+        .result-box .spinner-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 50px; /* Чтобы спиннер был виден */
+        }
+        .result-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .copy-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px; /* Согласованные углы */
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            font-size: 1.1em;
+            display: flex; /* Для центрирования иконки */
+            align-items: center;
+            justify-content: center;
+        }
+        .copy-btn:hover {
+            background: #f3f4f6;
+            border-color: var(--border-strong);
+            color: var(--text-primary);
+        }
+        .copy-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+        }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid var(--border-light); /* Цвет фона спиннера */
+            border-top-color: var(--accent); /* Цвет активной части спиннера */
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        /* Спиннер для кнопки перевода */
+        #translateBtn .spinner {
+            border-color: rgb(255 255 255 / 0.3);
+            border-top-color: #fff;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            padding: 30px 0 20px 0;
+        }
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .toast {
+            background-color: var(--toast-bg);
+            color: var(--toast-text);
+            padding: 12px 18px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--danger); }
+        .toast.warning { background-color: var(--warning); color: var(--text-primary); }
+        .toast i { font-size: 1.2em; }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { 
+                margin-top: 15px;
+                padding: 20px 25px;
+                gap: 15px;
+            }
+            h2 { font-size: 1.5em; margin-bottom: 10px; }
+            .lang-selector { flex-direction: column; gap: 10px; align-items: stretch; }
+            select { width: 100%; }
+            .swap-btn { 
+                margin: 5px auto;
+                align-self: center;
+            }
+            .swap-btn:hover {
+                background: var(--accent);
+                color: #fff;
+                border-color: var(--accent);
+            }
+            .controls, .main-buttons { flex-direction: column; width: 100%; }
+            textarea { min-height: 80px; }
+            .toast-container { bottom: 10px; right: 10px; left: 10px; align-items: center; }
+            .toast { width: auto; max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2><i class="fas fa-language"></i> Переводчик Текстов</h2>
+    <div class="lang-selector">
+        <select id="src_lang" aria-label="Исходный язык">
+            <option value="ru">Русский</option>
+            <option value="en">Английский</option>
+        </select>
+        <button class="swap-btn" id="swapBtn" title="Поменять языки" aria-label="Поменять языки">
+            <i class="fas fa-exchange-alt"></i>
+        </button>
+        <select id="tgt_lang" aria-label="Целевой язык">
+            <option value="en">Английский</option>
+            <option value="ru">Русский</option>
+        </select>
+    </div>
+
+    <div class="input-area">
+        <label for="textInput">Введите текст для перевода:</label>
+        <div class="textarea-wrapper">
+            <textarea id="textInput" rows="6" maxlength="1000" placeholder="Начните писать здесь..."></textarea>
+        </div>
+        <div id="charCounter" class="char-counter">0 / 1000</div>
+    </div>
+
+    <div class="controls">
+        <div class="main-buttons">
+            <button id="translateBtn"><i class="fas fa-paper-plane"></i> Перевести</button>
+            <button id="clearBtn" type="button"><i class="fas fa-trash-alt"></i> Очистить</button>
+        </div>
+    </div>
+
+    <div class="output-area">
+        <label for="resultTextSpan">Результат перевода:</label>
+        <div class="result-box">
+            <span id="resultTextSpan"></span>
+            <div class="result-actions">
+                <button class="copy-btn" id="copyBtn" style="display:none;" title="Скопировать перевод" aria-label="Скопировать перевод">
+                    <i class="far fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    Курсовая работа: "Автоматический перевод текстов с глубоким обучением"<br>
+    Выполнил: <b>Ваше Имя</b> | <a href="#" target="_blank" id="githubLink">Исходный код на GitHub</a>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const srcLangSelect = document.getElementById('src_lang');
+const tgtLangSelect = document.getElementById('tgt_lang');
+const swapBtn = document.getElementById('swapBtn');
+const translateBtn = document.getElementById('translateBtn');
+const translateBtnOriginalText = translateBtn.innerHTML;
+const clearBtn = document.getElementById('clearBtn');
+const textInput = document.getElementById('textInput');
+const resultTextSpan = document.getElementById('resultTextSpan');
+const copyBtn = document.getElementById('copyBtn');
+const charCounter = document.getElementById('charCounter');
+const toastContainer = document.getElementById('toastContainer');
+const MAX_CHARS = 1000;
+
+// --- Toast Notification Function ---
+function showToast(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.classList.add('toast', type);
+    let iconClass = 'fas fa-info-circle';
+    if (type === 'success') iconClass = 'fas fa-check-circle';
+    if (type === 'error') iconClass = 'fas fa-times-circle';
+    if (type === 'warning') iconClass = 'fas fa-exclamation-triangle';
+    toast.innerHTML = `<i class="${iconClass}"></i> ${message}`;
+    toastContainer.appendChild(toast);
+    // Animate in
+    setTimeout(() => toast.classList.add('show'), 10);
+    // Remove after duration
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300); // Allow fade out animation
+    }, duration);
+}
+
+// --- Character Counter ---
+textInput.addEventListener('input', () => {
+    const currentLength = textInput.value.length;
+    charCounter.textContent = `${currentLength} / ${MAX_CHARS}`;
+    if (currentLength > MAX_CHARS) {
+        charCounter.style.color = 'var(--danger)';
+    } else {
+        charCounter.style.color = 'var(--text-placeholder)';
+    }
+});
+
+// --- Language Persistence (localStorage) ---
+function saveLanguages() {
+    localStorage.setItem('translator_srcLang', srcLangSelect.value);
+    localStorage.setItem('translator_tgtLang', tgtLangSelect.value);
+}
+
+function loadLanguages() {
+    const savedSrcLang = localStorage.getItem('translator_srcLang');
+    const savedTgtLang = localStorage.getItem('translator_tgtLang');
+    if (savedSrcLang) srcLangSelect.value = savedSrcLang;
+    if (savedTgtLang) tgtLangSelect.value = savedTgtLang;
+}
+
+// --- Event Listeners ---
+swapBtn.addEventListener('click', () => {
+    const temp = srcLangSelect.value;
+    srcLangSelect.value = tgtLangSelect.value;
+    tgtLangSelect.value = temp;
+    saveLanguages();
+    if (resultTextSpan.innerText.trim() && textInput.value === '') { // Only swap if input is empty
+        textInput.value = resultTextSpan.innerText;
+        resultTextSpan.innerHTML = '';
+        copyBtn.style.display = 'none';
+        textInput.dispatchEvent(new Event('input')); // Update char counter
+    }
+});
+
+clearBtn.addEventListener('click', () => {
+    textInput.value = '';
+    resultTextSpan.innerHTML = '';
+    copyBtn.style.display = 'none';
+    translateBtn.disabled = false;
+    translateBtn.innerHTML = translateBtnOriginalText;
+    textInput.dispatchEvent(new Event('input')); // Update char counter
+    showToast('Поля очищены', 'info');
+});
+
+copyBtn.addEventListener('click', () => {
+    if (resultTextSpan.innerText.trim()) {
+        navigator.clipboard.writeText(resultTextSpan.innerText)
+            .then(() => {
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.add('copied');
+                showToast('Перевод скопирован!', 'success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="far fa-copy"></i>';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка копирования: ', err);
+                showToast('Ошибка копирования', 'error');
+            });
+    }
+});
+
+translateBtn.addEventListener('click', async () => {
+    const srcLang = srcLangSelect.value;
+    const tgtLang = tgtLangSelect.value;
+    const text = textInput.value.trim();
+
+    if (!text) {
+        showToast('Пожалуйста, введите текст для перевода.', 'warning');
+        textInput.classList.add('textarea-shake');
+        setTimeout(() => textInput.classList.remove('textarea-shake'), 500);
+        return;
+    }
+    if (textInput.value.length > MAX_CHARS) {
+        showToast(`Текст слишком длинный. Максимум ${MAX_CHARS} символов.`, 'warning');
+        textInput.classList.add('textarea-shake');
+        setTimeout(() => textInput.classList.remove('textarea-shake'), 500);
+        return;
+    }
+
+    translateBtn.disabled = true;
+    translateBtn.innerHTML = `<span class="spinner"></span> ${translateBtn.dataset.loadingText || 'Перевод...'}`;
+    resultTextSpan.innerHTML = '<div class="spinner-wrapper"><span class="spinner"></span></div>'; // Spinner in result box
+    copyBtn.style.display = 'none';
+
+    try {
+        const response = await fetch('/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ src_lang: srcLang, tgt_lang: tgtLang, text: text })
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Ошибка сервера: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMsg += errorData.detail ? `: ${errorData.detail}` : (errorData.error || '');
+            } catch (e) { /* не удалось получить JSON ошибки */ }
+            throw new Error(errorMsg);
+        }
+
+        const data = await response.json();
+        if (data.result && data.result.trim()) {
+            resultTextSpan.innerText = data.result;
+            copyBtn.style.display = 'flex';
+        } else {
+            resultTextSpan.innerText = 'Не удалось получить перевод.';
+        }
+    } catch (error) {
+        console.error('Ошибка при переводе:', error);
+        resultTextSpan.innerText = error.message || 'Произошла неизвестная ошибка.';
+        showToast(error.message || 'Произошла ошибка перевода', 'error');
+    } finally {
+        translateBtn.disabled = false;
+        translateBtn.innerHTML = translateBtnOriginalText;
+    }
+});
+
+// Event listeners for language select changes
+srcLangSelect.addEventListener('change', saveLanguages);
+tgtLangSelect.addEventListener('change', saveLanguages);
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+    loadLanguages();
+    textInput.dispatchEvent(new Event('input')); // Initialize char counter
+    // Замените 'your-github-username/your-repo-name' на актуальную ссылку
+    document.getElementById('githubLink').href = 'https://github.com/ваше_имя_пользователя/название_репозитория';
+});
+
+</script>
+</body>
+</html> 
