@@ -539,8 +539,8 @@ translateBtn.addEventListener('click', async () => {
         }
 
         const data = await response.json();
-        if (data.result && data.result.trim()) {
-            resultTextSpan.innerText = data.result;
+        if (data.translation && data.translation.trim()) {
+            resultTextSpan.innerText = data.translation;
             copyBtn.style.display = 'flex';
         } else {
             resultTextSpan.innerText = 'Не удалось получить перевод.';
