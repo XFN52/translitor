@@ -526,7 +526,7 @@ translateBtn.addEventListener('click', async () => {
         const response = await fetch('/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ src_lang: srcLang, tgt_lang: tgtLang, text: text })
+            body: JSON.stringify({ source_lang: srcLang, target_lang: tgtLang, text: text })
         });
 
         if (!response.ok) {
