@@ -83,6 +83,41 @@ def main():
             "reference": "Elon Musk founded Tesla and SpaceX.",
             "source_lang": "ru",
             "target_lang": "en"
+        },
+        {
+            "name": "Перевод с английского на русский",
+            "source": "The quick brown fox jumps over the lazy dog.",
+            "reference": "Быстрая коричневая лиса прыгает через ленивую собаку.",
+            "source_lang": "en",
+            "target_lang": "ru"
+        },
+        {
+            "name": "Вопрос (EN-RU)",
+            "source": "What is the weather like today?",
+            "reference": "Какая сегодня погода?",
+            "source_lang": "en",
+            "target_lang": "ru"
+        },
+        {
+            "name": "Длинное предложение с техническими терминами (EN-RU)",
+            "source": "Machine learning algorithms enable computers to learn from data and improve their performance over time without being explicitly programmed.",
+            "reference": "Алгоритмы машинного обучения позволяют компьютерам учиться на данных и со временем улучшать свою производительность без явного программирования.",
+            "source_lang": "en",
+            "target_lang": "ru"
+        },
+        {
+            "name": "Числа и единицы (EN-RU)",
+            "source": "The temperature is 25 degrees Celsius, and the humidity is 60%.",
+            "reference": "Температура составляет 25 градусов Цельсия, а влажность - 60%.",
+            "source_lang": "en",
+            "target_lang": "ru"
+        },
+        {
+            "name": "Идиома (EN-RU)",
+            "source": "It's raining cats and dogs.",
+            "reference": "Льет как из ведра.",
+            "source_lang": "en",
+            "target_lang": "ru"
         }
     ]
     
